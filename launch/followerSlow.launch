@@ -1,0 +1,17 @@
+<launch>
+	<include file="$(find rplidar_ros)/launch/rplidar.launch" />
+ 	<include file="$(find rosbot_ekf)/launch/all.launch"/>
+ 	
+ 	<rosparam command="load" file="$(find joint_state_controller)/joint_state_controller.yaml" />
+  	<node name="joint_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joint_state_controller" />
+  	<param name="robot_description" command="$(find xacro)/xacro.py '$(find rosbot_description)/urdf/rosbot.xacro'"/>
+  	<node name="rosbot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param robot_description -model rosbot" />
+  	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find rosbot_follower)/launch/rviz/follower.rviz"/>
+	
+	<node pkg="rosbot_follower" type="detectorFollowerSlow.py" name="rosbot_follower"/>
+	<node pkg="rosserial_python" type="serial_node.py" name="esp_client"> 
+		<param name="port" value="tcp"/>
+		<param name="tcp_port" value="11411"/>
+	</node>
+</launch>
