@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find rplidar_ros)/launch/rplidar.launch" />
+	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+	<node pkg="human_follower" type="follow.py" name="follower"/>
+</launch>
