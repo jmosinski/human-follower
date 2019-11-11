@@ -247,20 +247,23 @@ class HumanFollower:
         """
         Check if can follow
         """
-        self.manualMode = bool(data.data)
-        if self.manualMode or self.follow:
-            self.systemChceck = False
-        else:
-            self.systemChceck = True
+        manualMode = bool(data.data)
 
-        if not self.manualMode and not self.systemChceck and not self.scanranges:
+        if (self.manualMode and not manualMode):
             self.follow = True
             self.positionCalibration = True
         else:
             self.follow = False
+	
+	if self.manualMode or self.follow:
+	    self.systemCheck = False
+	else:
+	    self.systemCheck = True
+	
+	self.manualMode = manualMode
 
     def evalMode(self):
-        mode = 'System Chceck'
+        mode = 'System Check'
         if self.manualMode:
             mode = 'Manual'
         elif self.follow:

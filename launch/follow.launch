@@ -2,7 +2,6 @@
 	<include file="$(find rplidar_ros)/launch/rplidar.launch" />
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 
-	<node pkg="rosserial_python" type="serial_node.py" name="rosserial" args="_baud:=9600 _port:=/dev/ttyUSB0"/>
 	<node pkg="human_follower" type="follow.py" name="follower"/>
 	<node pkg="human_follower" type="display.py" name="display"/>
 </launch>
