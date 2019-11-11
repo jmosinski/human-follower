@@ -6,7 +6,7 @@ from geometry_msgs.msg import Point
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Twist
 from visualization_msgs.msg import Marker
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String
 import tf
 import tf2_ros
 
@@ -174,20 +174,24 @@ class HumanFollower:
         self.positionCalibration = True
         self.follow = False
         self.manualMode = False
+        self.systemChceck = True
 
         self.detectedHuman = Human(Point())
         self.scan = LaserScan()
+        self.mode = String()
 
         self.legPub = rospy.Publisher('leg_to_follow', Marker, queue_size=10)
         self.steerPub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+        self.modePub = rospy.Publisher('mode', String, queue_size=10)
 
         rate = rospy.Rate(10)  # 10hz
         self.scanSub = rospy.Subscriber("/scan", LaserScan, self.scanCallback)
         self.followSub = rospy.Subscriber("/client_count", Int32, self.followCallback)
-        rospy.wait_for_message("/scan", LaserScan)
+        # rospy.wait_for_message("/scan", LaserScan)
 
         while not rospy.is_shutdown():
             rate.sleep()
+            self.evalMode()
             if not self.follow:
             	continue
 
@@ -243,17 +247,32 @@ class HumanFollower:
         """
         Check if can follow
         """
-        manualMode = bool(data.data)
-        if not self.manualMode and not manualMode:
-            rospy.loginfo("Mode: System check")
-        elif self.manualMode and not manualMode:
+        self.manualMode = bool(data.data)
+        if self.manualMode or self.follow:
+            self.systemChceck = False
+        else:
+            self.systemChceck = True
+
+        if not self.ManualMode and not self.systemChceck and not self.scanranges:
             self.follow = True
             self.positionCalibration = True
-            rospy.loginfo("Mode: Follow")
         else:
             self.follow = False
-            rospy.loginfo("Mode: Manual")
-        self.manualMode = bool(data)
+
+    def evalMode(self):
+        mode = 'System Chceck'
+        if self.ManualMode:
+            mode = 'Manual'
+        elif self.follow:
+            if self.positionCalibration:
+                mode = 'Calibrate'
+            else:
+                mode = 'Follow'
+
+        if mode != self.mode.data:
+            rospy.loginfo('Mode: ' + mode)
+            self.mode.data = mode
+            self.modePub(self.mode)
 
     def findClusters(self, scan):
         """
@@ -507,6 +526,5 @@ class HumanFollower:
 if __name__ == '__main__':
     try:
         robot = HumanFollower()
-        rospy.spin()
     except rospy.ROSInterruptException:
         pass
