@@ -249,7 +249,7 @@ class HumanFollower:
         """
         manualMode = bool(data.data)
 
-        if (self.manualMode and not manualMode):
+        if (self.manualMode and not manualMode) and self.scan.ranges:
             self.follow = True
             self.positionCalibration = True
         else:
