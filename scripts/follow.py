@@ -253,7 +253,7 @@ class HumanFollower:
         else:
             self.systemChceck = True
 
-        if not self.ManualMode and not self.systemChceck and not self.scanranges:
+        if not self.manualMode and not self.systemChceck and not self.scanranges:
             self.follow = True
             self.positionCalibration = True
         else:
@@ -261,7 +261,7 @@ class HumanFollower:
 
     def evalMode(self):
         mode = 'System Chceck'
-        if self.ManualMode:
+        if self.manualMode:
             mode = 'Manual'
         elif self.follow:
             if self.positionCalibration:
@@ -272,7 +272,7 @@ class HumanFollower:
         if mode != self.mode.data:
             rospy.loginfo('Mode: ' + mode)
             self.mode.data = mode
-            self.modePub(self.mode)
+            self.modePub.publish(self.mode)
 
     def findClusters(self, scan):
         """
