@@ -1,6 +1,7 @@
 #include "hFramework.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <Lego_Touch.h>
 #include "ros.h"
 #include "sensor_msgs/BatteryState.h"
@@ -15,10 +16,12 @@ using namespace hFramework;
 // Const
 #define ENGINE_FORWARD -1
 #define ENGINE_BACKWARD 1
-#define STEERING_LEFT -1
-#define STEERING_RIGHT 1
+#define STEERING_LEFT 1
+#define STEERING_RIGHT -1
 
 #define ENGINE_P_GAIN = 500
+#define STEERING_P_GAIN = 1000
+#define STEERING_MAX_ANGLE_RAD = 45 * 3.14/180.0 // 45 degrees
 
 // Blocked steering turn
 #define BLOCKED_NONE 0
@@ -32,6 +35,9 @@ sensor_msgs::BatteryState battery;
 
 // Global variables
 geometry_msgs::Twist cmd_vel;
+int straightEncoderVal;
+int leftMaxEncoderVal;
+int rightMaxEncoderVal;
 
 // ROS definitions
 ros::NodeHandle nh;
@@ -51,12 +57,11 @@ void initBatteryPublisher()
         battery_pub = new ros::Publisher("/battery", &battery);
         nh.advertise(*battery_pub);
 }
-void initCmdVelEcho()
+void initCmdVel()
 {
         cmd_vel_pub = new ros::Publisher("/cmd_vel_echo", &cmd_vel);
         nh.advertise(*cmd_vel_pub);
-        cmd_vel_sub = new ros::Subscriber<geometry_msgs::Twist>("/cmd_vel",
-CmdVelSubscriber);
+        cmd_vel_sub = new ros::Subscriber<geometry_msgs::Twist>("/cmd_vel", CmdVelSubscriber);
         nh.subscribe(*cmd_vel_sub);
 }
 
@@ -73,6 +78,47 @@ bool key_pressed(hSensors::Lego_Touch &device, int threshold=10)
                 return true;
         else
                 return false;
+}
+
+int getAckermannEncoderReferenceValues()
+{
+    // Get data
+    turn(STEERING_RIGHT, 500);
+    sleep(2000*1000); // Wait minimum 2s until key press
+    while(!key_pressed(sensor));
+    rightMaxEncoderVal = steering.getEncoderCnt();
+
+    turn(STEERING_LEFT, 500);
+    sleep(2000*1000); // Wait minimum 2s until key press
+    while(!key_pressed(sensor));
+    leftMaxEncoderVal = steering.getEncoderCnt();
+
+    // Calculate variables
+    straightEncoderVal = (rightMaxEncoderVal + leftMaxEncoderVal) / 2
+}
+
+void turn_controller(int desiredAngle)
+{
+    // Get actual encoder value
+    actualEncoderVal = steering.getEncoderCnt();
+
+    // Calculate relative values
+    relativeActualEncoderVal = actualEncoderVal - straightEncoderVal;
+    relativeLeftMaxEncoderVal = leftMaxEncoderVal - straightEncoderVal;
+    relativeRightMaxEncoderVal = rightMaxEncoderVal - straightEncoderVal;
+
+    // Calculate actual angle
+    if (abs(relativeActualEncoderVal - relativeLeftMaxEncoderVal) < abs(relativeActualEncoderVal - relativeRightMaxEncoderVal))
+        actualAngle = (relativeActualEncoderVal / relativeLeftMaxEncoderVal) * STEERING_MAX_ANGLE_RAD * (1) // LEFT SIDE
+    else
+        actualAngle = (relativeActualEncoderVal / relativeRightMaxEncoderVal) * STEERING_MAX_ANGLE_RAD * (-1) // RIGHT SIDE
+
+    // Calculate steering value and execute steering function
+    steering_value = (desiredAngle - actualAngle) * STEERING_P_GAIN;
+    if (steering_value > 0)
+        turn(STEERING_LEFT, steering_value);
+    else
+        turn(STEERING_RIGHT, steering_value);
 }
 
 void turn(int turn_side, int power)
@@ -132,7 +178,7 @@ void turn(int turn_side, int power)
 
 void move(int power)
 {
-        engine.setPower(ENGINE_FORWARD*power);
+        engine.setPower(ENGINE_FORWARD*ENGINE_P_GAIN*power);
 }
 
 void hMain()
@@ -141,31 +187,34 @@ void hMain()
         nh.getHardware()->initWithDevice(&Serial);
         nh.initNode();
         initBatteryPublisher();
-        initCmdVelEcho();
+        initCmdVel();
+        getAckermannEncoderReferenceValues()
 
         uint32_t t = sys.getRefTime();
-        int power;
-        int turn_side;
+
+        // int power;
+        // int turn_side;
 
         while(true)
         {
                 nh.spinOnce();
-                //printf("Encoder %d\r\n", steering.getEncoderCnt());
 
-                turn_side = 0;
-                power = 0;
-                if(hBtn2.isPressed())
-                {
-                        turn_side = STEERING_LEFT;
-                        power = 250;
-                }
-                if(hBtn1.isPressed())
-                {
-                        turn_side = STEERING_RIGHT;
-                        power = 250;
-                }
-                turn(turn_side, power);
-                move(cmd_vel.linear.x*ENGINE_P_GAIN);
+                // turn_side = 0;
+                // power = 0;
+                // if(hBtn2.isPressed())
+                // {
+                //         turn_side = STEERING_LEFT;
+                //         power = 250;
+                // }
+                // if(hBtn1.isPressed())
+                // {
+                //         turn_side = STEERING_RIGHT;
+                //         power = 250;
+                // }
+                // turn(turn_side, power);
+
+                turn_controller(cmd_vel.angular.z);
+                move(cmd_vel.linear.x);
 
                 battery.voltage = sys.getSupplyVoltage();
                 battery_pub->publish(&battery);
