@@ -140,7 +140,6 @@ class HumanFollower:
 
         # Parameters for controller
         self.speedPGain = 1./1.9
-        self.angularSpeedPGain = 1.
 
         # Distance/angle has to be greater for robot to start moving
         self.minHumanDistance = 0.3
@@ -193,7 +192,7 @@ class HumanFollower:
             rate.sleep()
             self.evalMode()
             if not self.follow:
-            	continue
+                continue
 
             clusterList = self.findClusters(self.scan)
             if not clusterList:
@@ -254,13 +253,13 @@ class HumanFollower:
             self.positionCalibration = True
         else:
             self.follow = False
-	
-	if self.manualMode or self.follow:
-	    self.systemCheck = False
-	else:
-	    self.systemCheck = True
-	
-	self.manualMode = manualMode
+
+        if self.manualMode or self.follow:
+            self.systemCheck = False
+        else:
+            self.systemCheck = True
+
+        self.manualMode = manualMode
 
     def evalMode(self):
         mode = 'System Check'
@@ -433,14 +432,14 @@ class HumanFollower:
             xSpeed = 0
 
         if abs(a) > self.minHumanAngle:
-            zAngularSpeed = -a * self.angularSpeedPGain
+            zSteeringAngle = -a
         else:
-            zAngularSpeed = 0
+            zSteeringAngle = 0
 
         command = Twist()
         if (self.follow and not self.positionCalibration):
             command.linear.x = xSpeed
-            command.angular.z = zAngularSpeed
+            command.angular.z = zSteeringAngle
             self.steerPub.publish(command)
         else:
             self.steerPub.publish(command)
