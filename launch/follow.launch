@@ -11,7 +11,7 @@
 	<param name="angle_compensate"    type="bool"   value="true"/>
 	</node>
 
-	<node pkg="rosserial_python" type="serial_node.py" name="rosserial" args="_baud:=9600 _port:=/dev/ttyUSB_CORE2"/>
+	<node pkg="rosserial_python" type="serial_node.py" name="rosserial" args="_baud:=57600 _port:=/dev/ttyUSB_CORE2"/>
 	<node pkg="human_follower" type="follow.py" name="follower"/>
 	<node pkg="human_follower" type="display.py" name="display"/>
 </launch>

@@ -42,7 +42,7 @@ class Human:
         std_process_noise = 0.05
         std_pos = std_process_noise
         std_vel = std_process_noise
-        std_obs = 0.4
+        std_obs = 0.2
         var_pos = std_pos**2
         var_vel = std_vel**2
         var_obs_local = std_obs**2
@@ -127,7 +127,7 @@ class HumanFollower:
         self.maxRange = 2.4
         # Readings have to be in front of robot in ranges
         # (maxAngle, Pi) or (-Pi, -maxAngle)
-        self.maxAngle = 3*math.pi/4
+        self.maxAngle = math.pi/2
 
         # Clusters must be in appropriate range and have enought samples
         self.clusterizationMaxDistanceParam = 0.12
@@ -183,7 +183,7 @@ class HumanFollower:
         self.steerPub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.modePub = rospy.Publisher('mode', String, queue_size=10)
 
-        rate = rospy.Rate(10)  # 10hz
+        rate = rospy.Rate(30)  # 30hz
         self.scanSub = rospy.Subscriber("/scan", LaserScan, self.scanCallback)
         self.followSub = rospy.Subscriber("/client_count", Int32, self.followCallback)
         # rospy.wait_for_message("/scan", LaserScan)
@@ -299,6 +299,7 @@ class HumanFollower:
             eps=self.clusterizationMaxDistanceParam,
             min_samples=self.clusterizationMinSamplesParam
         )
+	clusterList = []
         db.fit(pointsList)
         core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
         core_samples_mask[db.core_sample_indices_] = True
@@ -306,7 +307,6 @@ class HumanFollower:
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
         unique_labels = set(labels)
 
-        clusterList = []
         for k in unique_labels:
             class_member_mask = (labels == k)
             xy = pointsList[class_member_mask & core_samples_mask]
@@ -375,7 +375,7 @@ class HumanFollower:
         secondLeg = Point()
         humanPosition = Point()
         humanPositionTemp = Point()
-        if len(sortedClusters) > 2:
+        if len(sortedClusters) > 1:
             sortedClusters.sort(key=lambda x: (math.sqrt((x.x-firstLeg.x)**2
                                                + (x.y-firstLeg.y)**2) + x.z))
             secondLeg = sortedClusters[1]
@@ -425,9 +425,12 @@ class HumanFollower:
         """
         r = math.sqrt(humanPosition.x**2 + humanPosition.y**2)
         a = math.atan2(humanPosition.y, -humanPosition.x)
+	# Wheel base
+	L = 0.21 
 
         if r > self.minHumanDistance:
             xSpeed = (r-self.minHumanDistance) * self.speedPGain
+	    a = math.atan2(2.0*L*math.sin(a) / r, 1.0)
         else:
             xSpeed = 0
 
