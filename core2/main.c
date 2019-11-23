@@ -20,8 +20,8 @@ using namespace hFramework;
 #define STEERING_RIGHT 1
 
 #define ENGINE_P_GAIN 1500.0
-#define STEERING_P_GAIN 1000.0
-#define STEERING_MAX_ANGLE_RAD 45.0 * 3.14/180.0 // 45 degrees
+#define STEERING_P_GAIN 2000.0
+#define STEERING_MAX_ANGLE_RAD 30.0 * 3.14/180.0 // 30 degrees
 
 // Blocked steering turn
 #define BLOCKED_NONE 0
@@ -50,15 +50,10 @@ ros::Subscriber<geometry_msgs::Twist> *cmd_vel_sub;
 
 void CmdVelSubscriber(const geometry_msgs::Twist& msg)
 {
-        // OLD
-        // cmd_vel = msg;
-
         // NEW
         cmd_vel.linear.x = msg.linear.x;
         cmd_vel.angular.z = msg.angular.z;
 
-        cmd_vel.angular.x++;
-        cmd_vel.angular.y++;
 }
 void initBatteryPublisher()
 {
@@ -83,9 +78,16 @@ bool key_pressed(hSensors::Lego_Touch &device, int threshold=3)
                 endurance = 0;
 
         if (endurance > threshold)
-                return true;
+		{
+			hLED1.on();
+			return true;
+		}
         else
-                return false;
+		{
+			hLED1.off();
+			return false;
+		}
+                
 }
 
 void turn(int turn_side, int power)
@@ -139,7 +141,7 @@ void turn(int turn_side, int power)
         }
         else
         {
-                steering.setPower(turn_side*abs(power));
+                steering.setPower(turn_side*min(800, abs(power)));
                 if (DEBUG)
                 {
                         if (turn_side == STEERING_LEFT)
@@ -168,6 +170,9 @@ float turn_controller(float desiredAngle)
         actualAngle = (float(relativeActualEncoderVal) / relativeRightMaxEncoderVal) * STEERING_MAX_ANGLE_RAD * (-1.0); // RIGHT SIDE
 
     // Calculate steering value and execute steering function
+    cmd_vel.angular.x = actualAngle;
+    cmd_vel.angular.y = desiredAngle;
+	
     int steering_value = (desiredAngle - actualAngle) * STEERING_P_GAIN;
     if (DEBUG)
     {
@@ -184,7 +189,7 @@ float turn_controller(float desiredAngle)
 
 void move(float power)
 {
-        engine.setPower(ENGINE_FORWARD*ENGINE_P_GAIN*power);
+        engine.setPower(min(ENGINE_FORWARD*ENGINE_P_GAIN*power, 500.0));
 }
 
 
@@ -192,14 +197,14 @@ void getAckermannEncoderReferenceValues()
 {
     // Get data
     turn(STEERING_RIGHT, 400);
-    sys.delay(2000); // Wait minimum 2s until key press
+    sys.delay(1000); // Wait minimum 1s until key press
 	while(!key_pressed(sensor))
 		turn(STEERING_RIGHT, 400);
 	turn(STEERING_RIGHT, 400);
     rightMaxEncoderVal = steering.getEncoderCnt();
 
     turn(STEERING_LEFT, 400);
-    sys.delay(2000); // Wait minimum 2s until key press
+    sys.delay(1000); // Wait minimum 1s until key press
 	while(!key_pressed(sensor))
 		turn(STEERING_LEFT, 400);
 	turn(STEERING_LEFT, 400);
@@ -231,7 +236,7 @@ void hMain()
         // 4. Try to turn battery publisher
         // 5. Add ros rate
         // 6. Try to measure times in main loop and subscribers frequency
-        Serial.init(9600, Parity::None, StopBits::One);
+        Serial.init(57600, Parity::None, StopBits::One);
         nh.getHardware()->initWithDevice(&Serial);
         nh.initNode();
         initBatteryPublisher();
@@ -270,12 +275,10 @@ void hMain()
                 {
                         battery.voltage = sys.getSupplyVoltage();
                         battery_pub->publish(&battery);
-                }
-                if ((loop_cnt % 10) == 0)
-                {
-                        cmd_vel_pub->publish(&cmd_vel);
+						cmd_vel_pub->publish(&cmd_vel);
                 }
                 sys.delaySync(t, 10);
                 loop_cnt++;
         }
 }
+
