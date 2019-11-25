@@ -78,15 +78,15 @@ bool key_pressed(hSensors::Lego_Touch &device, int threshold=3)
                 endurance = 0;
 
         if (endurance > threshold)
-		{
-			hLED1.on();
-			return true;
-		}
+	{
+		hLED1.on();
+		return true;
+	}
         else
-		{
-			hLED1.off();
-			return false;
-		}
+	{
+		hLED1.off();
+		return false;
+	}
 
 }
 // Turn executer
@@ -194,16 +194,16 @@ void getAckermannEncoderReferenceValues()
     // Get data
     turn(STEERING_RIGHT, 400);
     sys.delay(1000); // Wait minimum 1s until key press
-	while(!key_pressed(sensor))
-		turn(STEERING_RIGHT, 400);
-	turn(STEERING_RIGHT, 400); // Call one more time to block that turn side
+    while(!key_pressed(sensor))
+	turn(STEERING_RIGHT, 400);
+    turn(STEERING_RIGHT, 400); // Call one more time to block that turn side
     rightMaxEncoderVal = steering.getEncoderCnt();
 
     turn(STEERING_LEFT, 400);
     sys.delay(1000); // Wait minimum 1s until key press
-	while(!key_pressed(sensor))
-		turn(STEERING_LEFT, 400);
-	turn(STEERING_LEFT, 400); // Call one more time to block that turn side
+    while(!key_pressed(sensor))
+	turn(STEERING_LEFT, 400);
+    turn(STEERING_LEFT, 400); // Call one more time to block that turn side
     leftMaxEncoderVal = steering.getEncoderCnt();
 
     // Calculate variables
@@ -265,7 +265,7 @@ void hMain()
                 {
                         battery.voltage = sys.getSupplyVoltage();
                         battery_pub->publish(&battery);
-						cmd_vel_pub->publish(&cmd_vel);
+			cmd_vel_pub->publish(&cmd_vel);
                 }
                 sys.delaySync(t, 10);
                 loop_cnt++;
