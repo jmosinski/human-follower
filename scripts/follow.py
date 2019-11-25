@@ -421,11 +421,11 @@ class HumanFollower:
         """
         r = math.sqrt(humanPosition.x**2 + humanPosition.y**2)
         a = math.atan2(humanPosition.y, -humanPosition.x)
-    	# Wheel base
-    	L = 0.21
 
         if r > self.minHumanDistance:
             xSpeed = (r-self.minHumanDistance) * self.speedPGain
+        	# Pure Pursuit control
+        	L = 0.21 # Wheel base [m]
 	        a = math.atan2(2.0*L*math.sin(a) / r, 1.0)
         else:
             xSpeed = 0
