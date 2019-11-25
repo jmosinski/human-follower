@@ -1,2 +1,2 @@
-# human_follower
+# Human_follower
 Lego robot following humans
