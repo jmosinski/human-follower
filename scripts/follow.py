@@ -20,13 +20,6 @@ from pykalman import KalmanFilter
 class Human:
     """
     Kalman filter to predict Human movement and filter out noise
-
-    Kalman filter from
-    https://github.com/angusleigh/leg_tracker/blob/melodic/scripts/joint_leg_tracker.py
-
-    BSD 3-Clause License
-    Copyright (c) 2018, Angus Leigh
-    All rights reserved.
     """
     def __init__(self, humanPosition):
         """
@@ -37,7 +30,7 @@ class Human:
         self.dist_travelled = 0.
 
         # Kalman filter variables
-        scan_frequency = 10
+        scan_frequency = 30
         delta_t = 1./scan_frequency
         std_process_noise = 0.05
         std_pos = std_process_noise
@@ -262,6 +255,9 @@ class HumanFollower:
         self.manualMode = manualMode
 
     def evalMode(self):
+        """
+        Evaluate current mode
+        """
         mode = 'System Check'
         if self.manualMode:
             mode = 'Manual'
@@ -316,7 +312,7 @@ class HumanFollower:
 
     def detectLegs(self, clusterList):
         """
-        Leg detection based on cluster points relations
+        Leg detection based on cluster points' relations
         """
         i = 0
         sortedClusters = []
@@ -425,12 +421,12 @@ class HumanFollower:
         """
         r = math.sqrt(humanPosition.x**2 + humanPosition.y**2)
         a = math.atan2(humanPosition.y, -humanPosition.x)
-	# Wheel base
-	L = 0.21 
+    	# Wheel base
+    	L = 0.21
 
         if r > self.minHumanDistance:
             xSpeed = (r-self.minHumanDistance) * self.speedPGain
-	    a = math.atan2(2.0*L*math.sin(a) / r, 1.0)
+	        a = math.atan2(2.0*L*math.sin(a) / r, 1.0)
         else:
             xSpeed = 0
 
