@@ -1,5 +1,5 @@
 # Human_follower
-Lego robot following humans
+Lego ackerman steering robot following humans based on laser scan
 
 ## ROS Kinetic
 http://wiki.ros.org/kinetic/Installation
@@ -17,7 +17,7 @@ https://learn.ubiquityrobotics.com/robot_commander
 ## RPLIDAR and ROS
 http://wiki.ros.org/rplidar
 
-## Husarion Core 2
+## Husarion CORE2
 https://husarion.com/manuals/core2/
 
 ## How does it work?
@@ -27,3 +27,6 @@ https://husarion.com/manuals/core2/
 4. Kalman filter to reduce noise  
 5. Pure pursuit control  
 6. steering the robot - Communication between Rspperry Pi nad Core 2 using UART and rosmsgs  
+
+## Gallery
+https://photos.app.goo.gl/p22A5HdJznrzMGJx6
